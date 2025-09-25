@@ -1,7 +1,6 @@
 """
 Модель данных и работа с базой данных
 """
-
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -16,11 +15,11 @@ class User(Base):
     __tablename__ = 'users'
     
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, unique=True, nullable=False)  # Telegram user ID
+    user_id = Column(Integer, unique=True, nullable=False)  
     username = Column(String(50), nullable=True)
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
-    full_name = Column(String(200), nullable=True)  # Имя и фамилия из анкеты
+    full_name = Column(String(200), nullable=True)  
     company = Column(String(200), nullable=True)
     phone = Column(String(50), nullable=True)
     email = Column(String(100), nullable=True)
@@ -46,29 +45,29 @@ class Vendor(Base):
     
     id = Column(Integer, primary_key=True)
     name = Column(String(200), nullable=False, unique=True)
-    priority = Column(String(50), nullable=True)  # Приоритет в развитии
-    origin = Column(String(100), nullable=True)  # Происхождение вендора
-    founded_year = Column(Integer, nullable=True)  # Год основания
-    categories = Column(Text, nullable=True)  # Категории продуктов (JSON)
-    key_products = Column(Text, nullable=True)  # Ключевые продукты
-    target_customers = Column(Text, nullable=True)  # Потенциальные заказчики
-    advantages = Column(Text, nullable=True)  # Конкурентные преимущества
-    software_registry = Column(String(10), nullable=True)  # Включены ли в реестр ПО
-    fstek = Column(String(10), nullable=True)  # ФСТЭК
-    fsb = Column(String(10), nullable=True)  # ФСБ
-    decision_makers = Column(Text, nullable=True)  # ЛПР
-    main_competitors = Column(Text, nullable=True)  # Основные конкуренты
-    foreign_replacement = Column(Text, nullable=True)  # Замена иностранных производителей
-    service = Column(Text, nullable=True)  # Сервисное обслуживание
-    partner_program = Column(Text, nullable=True)  # Партнерская программа
-    partner_requirements = Column(Text, nullable=True)  # Требования к партнерам
-    partner_benefits = Column(Text, nullable=True)  # Преимущества для партнеров
-    sales_recommendations = Column(Text, nullable=True)  # Рекомендации по продажам
-    certified_engineers = Column(String(10), nullable=True)  # Наличие сертифицированных инженеров
-    warehouse_availability = Column(String(10), nullable=True)  # Наличие оборудования на складе
-    service_provided = Column(String(10), nullable=True)  # Оказываем ли сервис
-    direction = Column(String(100), nullable=True)  # Направление (СХД, Серверы и т.д.)
-    description = Column(Text, nullable=True)  # Краткое описание
+    priority = Column(String(50), nullable=True) 
+    origin = Column(String(100), nullable=True) 
+    founded_year = Column(Integer, nullable=True)  
+    categories = Column(Text, nullable=True)  
+    key_products = Column(Text, nullable=True)  
+    target_customers = Column(Text, nullable=True) 
+    advantages = Column(Text, nullable=True)  
+    software_registry = Column(String(10), nullable=True)  
+    fstek = Column(String(10), nullable=True)  
+    fsb = Column(String(10), nullable=True) 
+    decision_makers = Column(Text, nullable=True)  
+    main_competitors = Column(Text, nullable=True)  
+    foreign_replacement = Column(Text, nullable=True)  
+    service = Column(Text, nullable=True)  
+    partner_program = Column(Text, nullable=True)  
+    partner_requirements = Column(Text, nullable=True)  
+    partner_benefits = Column(Text, nullable=True)  
+    sales_recommendations = Column(Text, nullable=True)  
+    certified_engineers = Column(String(10), nullable=True)  
+    warehouse_availability = Column(String(10), nullable=True)  
+    service_provided = Column(String(10), nullable=True)  
+    direction = Column(String(100), nullable=True)  
+    description = Column(Text, nullable=True)  
     created_date = Column(DateTime, default=datetime.utcnow)
     
     def to_card_text(self):
@@ -90,7 +89,6 @@ class Vendor(Base):
         if self.advantages:
             card += f"⭐ **Конкурентные преимущества:** {self.advantages}\n"
         
-        # Реестры и сертификации
         registries = []
         if self.software_registry == 'Да':
             registries.append('Реестр ПО')
@@ -117,9 +115,9 @@ class UserLog(Base):
     __tablename__ = 'user_logs'
     
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)  # Telegram user ID
-    action = Column(String(100), nullable=False)  # Тип действия
-    details = Column(Text, nullable=True)  # Дополнительная информация
+    user_id = Column(Integer, nullable=False)  
+    action = Column(String(100), nullable=False)  
+    details = Column(Text, nullable=True)  
     timestamp = Column(DateTime, default=datetime.utcnow)
     
     def to_dict(self):
@@ -177,12 +175,10 @@ class DatabaseManager:
         """Добавление или обновление вендора"""
         vendor = self.session.query(Vendor).filter_by(name=vendor_data['name']).first()
         if vendor:
-            # Обновляем существующего вендора
             for key, value in vendor_data.items():
                 if hasattr(vendor, key):
                     setattr(vendor, key, value)
         else:
-            # Создаем нового вендора
             vendor = Vendor(**vendor_data)
             self.session.add(vendor)
         
@@ -212,7 +208,6 @@ class DatabaseManager:
         total_users = self.session.query(User).count()
         active_users = self.session.query(User).filter_by(is_active=True).count()
         
-        # Популярные действия за последнюю неделю
         from datetime import timedelta
         week_ago = datetime.utcnow() - timedelta(days=7)
         recent_logs = self.session.query(UserLog).filter(UserLog.timestamp >= week_ago).all()
@@ -231,6 +226,5 @@ class DatabaseManager:
         """Закрытие соединения с базой данных"""
         self.session.close()
 
-# Глобальный экземпляр менеджера базы данных
 db = DatabaseManager()
 

@@ -5,26 +5,21 @@
 import os
 from typing import List
 
-# Токен бота (получить у @BotFather)
 BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
 
-# ID администраторов бота (замените на реальные Telegram ID)
 ADMIN_IDS: List[int] = [
-    123456789,  # Замените на свой Telegram ID
-    # 987654321,  # Добавьте других админов при необходимости
+    123456789, 
+
 ]
 
-# Настройки базы данных
 DATABASE_URL = 'sqlite:///netwell_bot.db'
 
-# Пути к файлам
 FILES_DIR = 'files'
 PRODUCT_PORTFOLIO_PATH = f'{FILES_DIR}/product_portfolio.pdf'
 GUIDELINE_PATH = f'{FILES_DIR}/guideline.pdf'
-LOGOS_URL = 'https://netwell.ru/logos'  # Ссылка на логотипы
+LOGOS_URL = 'https://netwell.ru/logos'  
 MARKETING_PRESENTATION_PATH = f'{FILES_DIR}/marketing_presentation.pdf'
 
-# Текстовые сообщения
 MESSAGES = {
     'welcome': "Уважаемый коллега, мы создали бот, который станет вашим гидом по компании Netwell. Для доступа в меню нажмите кнопку СТАРТ.",
     'form_intro': "Заполните короткую анкету, чтобы мы могли познакомиться ближе.",
@@ -41,12 +36,10 @@ MESSAGES = {
 Услуга платная и приобретается отдельно, а для некоторых решений предоставляется на исключительных условиях по запросу."""
 }
 
-# Направления деятельности
 DIRECTIONS = [
     'СХД', 'Сервера', 'ИБ', 'Инженерная инфраструктура', 'Сети', 'Унифицированные коммуникации'
 ]
 
-# Контакты менеджеров по направлениям
 MANAGERS_CONTACTS = {
     'СХД': 'Иван Петров, Старший менеджер, ipetrov@netwell.ru',
     'Сервера': 'Мария Сидорова, Ведущий менеджер, msidorova@netwell.ru',
@@ -56,5 +49,4 @@ MANAGERS_CONTACTS = {
     'Унифицированные коммуникации': 'Отдел коммуникаций, communications@netwell.ru'
 }
 
-# Создание директории для файлов
 os.makedirs(FILES_DIR, exist_ok=True)

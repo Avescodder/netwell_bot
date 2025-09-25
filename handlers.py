@@ -9,7 +9,6 @@ from telegram.constants import ParseMode
 from db import db
 from config import ADMIN_IDS, MESSAGES, DIRECTIONS, MANAGERS_CONTACTS, PRODUCT_PORTFOLIO_PATH, GUIDELINE_PATH, LOGOS_URL, MARKETING_PRESENTATION_PATH
 
-# Состояния для ConversationHandler
 WAITING_NAME, WAITING_COMPANY, WAITING_PHONE, WAITING_EMAIL = range(4)
 EDIT_NAME, EDIT_COMPANY, EDIT_PHONE, EDIT_EMAIL = range(4, 8)
 ADMIN_SEND_MESSAGE, ADMIN_UPDATE_VENDOR = range(8, 10)
@@ -23,17 +22,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /start"""
     user = update.effective_user
     
-    # Добавляем пользователя в базу данных
     db_user = db.add_user(user.id, user.username, user.first_name, user.last_name)
     db.log_user_action(user.id, 'start_command')
     
-    # Проверяем, заполнена ли анкета
     if db_user.full_name and db_user.company:
-        # Анкета уже заполнена, показываем главное меню
         await show_main_menu(update, context)
         return ConversationHandler.END
     
-    # Показываем приветствие и начинаем заполнение анкеты
     keyboard = [['🚀 СТАРТ']]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
     
@@ -77,7 +72,6 @@ async def waiting_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ожидание ввода email и завершение регистрации"""
     user_id = update.effective_user.id
     
-    # Сохраняем все данные в базу
     db.update_user_profile(
         user_id,
         full_name=context.user_data['full_name'],
@@ -509,7 +503,6 @@ async def send_file(query, file_path: str, file_description: str):
             ]])
         )
 
-# Функции для текстовых сообщений
 async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик текстовых сообщений"""
     text = update.message.text
@@ -550,7 +543,7 @@ async def admin_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     text = "👥 **Список пользователей:**\n\n"
-    for user in users[:20]:  # Показываем первых 20 пользователей
+    for user in users[:20]: 
         text += f"**ID:** {user.user_id}\n"
         text += f"**Имя:** {user.full_name or 'Не указано'}\n"
         text += f"**Компания:** {user.company or 'Не указана'}\n"

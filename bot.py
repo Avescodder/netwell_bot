@@ -15,22 +15,18 @@ from telegram.ext import (
 
 from config import BOT_TOKEN
 from handlers import (
-    # Основные обработчики
     start, handle_start_button, menu, button_callback,
     waiting_name, waiting_company, waiting_phone, waiting_email,
     search_vendor, cancel, handle_text_message,
     start_vendor_search,
     
-    # Состояния ConversationHandler
     WAITING_NAME, WAITING_COMPANY, WAITING_PHONE, WAITING_EMAIL,
     ADMIN_SEND_MESSAGE, ADMIN_UPDATE_VENDOR, VENDOR_SEARCH,
     
-    # Админские функции
     admin_users, admin_stats, admin_send_start, admin_send_message,
     admin_update_vendor_start, admin_update_vendor
 )
 
-# Настройка логирования
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -39,12 +35,10 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Основная функция запуска бота"""
-    # Создаем приложение
     application = Application.builder().token(BOT_TOKEN).build()
     
     # ========== CONVERSATION HANDLERS ==========
     
-    # Обработчик регистрации
     registration_handler = ConversationHandler(
         entry_points=[
             CommandHandler('start', start),
@@ -60,7 +54,6 @@ def main():
         name="registration"
     )
     
-    # Обработчик поиска вендоров
     vendor_search_handler = ConversationHandler(
         entry_points=[
             MessageHandler(filters.Regex(r'^🔍 Поиск вендоров$'), start_vendor_search)
@@ -72,7 +65,6 @@ def main():
         name="vendor_search"
     )
     
-    # Обработчик админской рассылки
     admin_broadcast_handler = ConversationHandler(
         entry_points=[CommandHandler('send', admin_send_start)],
         states={
@@ -82,7 +74,6 @@ def main():
         name="admin_broadcast"
     )
     
-    # Обработчик обновления вендоров
     admin_vendor_handler = ConversationHandler(
         entry_points=[CommandHandler('update_vendor', admin_update_vendor_start)],
         states={
@@ -94,31 +85,26 @@ def main():
     
     # ========== ДОБАВЛЯЕМ ОБРАБОТЧИКИ ==========
     
-    # Conversation handlers (должны быть первыми)
     application.add_handler(registration_handler)
     application.add_handler(vendor_search_handler)
     application.add_handler(admin_broadcast_handler)
     application.add_handler(admin_vendor_handler)
     
-    # Команды
     application.add_handler(CommandHandler('menu', menu))
     application.add_handler(CommandHandler('users', admin_users))
     application.add_handler(CommandHandler('stats', admin_stats))
     application.add_handler(CommandHandler('cancel', cancel))
     
-    # Callback кнопки
     application.add_handler(CallbackQueryHandler(button_callback))
     
-    # Текстовые сообщения (должны быть последними)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
     
     # ========== ЗАПУСК БОТА ==========
     
     logger.info("Запускаем бота Netwell...")
     
-    # Запускаем бота
     application.run_polling(
-        drop_pending_updates=True,  # Игнорируем старые сообщения
+        drop_pending_updates=True, 
         allowed_updates=Update.ALL_TYPES
     )
 

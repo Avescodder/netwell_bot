@@ -4,8 +4,11 @@
 
 import os
 from typing import List
+import dotenv
 
-BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
+dotenv.load_dotenv()
+
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 ADMIN_IDS: List[int] = [
     123456789, 

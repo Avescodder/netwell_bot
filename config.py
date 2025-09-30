@@ -3,17 +3,18 @@
 """
 
 import os
-from typing import List
 import dotenv
+from typing import List
 
 dotenv.load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
-ADMIN_IDS: List[int] = [
-    123456789, 
-
-]
+ADMIN_IDS_STR = os.getenv('ADMIN_IDS')
+try:
+    ADMIN_IDS: List[int] = [int(x.strip()) for x in ADMIN_IDS_STR.split(',') if x.strip().isdigit()]
+except (ValueError, AttributeError):
+    ADMIN_IDS: List[int] = []
 
 DATABASE_URL = 'sqlite:///netwell_bot.db'
 

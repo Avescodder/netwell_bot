@@ -1,7 +1,6 @@
 """
 Скрипт быстрой настройки бота Netwell
 """
-
 import os
 import sys
 

@@ -387,7 +387,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     if len(card_text) > 4000:
                         card_text = card_text[:4000] + "..."
                     
-                    # Находим индекс направления безопасно
                     try:
                         dir_index = DIRECTIONS.index(vendor.direction)
                         back_callback = f"dir_{dir_index}"
@@ -679,6 +678,10 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_send_message(update, context)
         return 
     
+    elif 'update_vendor' in context.user_data:
+        del context.user_data['update_vendor']
+        await admin_update_vendor(update, context)
+        return 
     
     if text == '🏢 О компании':
         await handle_company_info(update, context)
@@ -826,6 +829,7 @@ async def admin_update_vendor_start(update: Update, context: ContextTypes.DEFAUL
         "NetApp|СХД|Лидер в области систем хранения данных|Высокий|США|1992|FAS, AFF, ONTAP",
         reply_markup=ReplyKeyboardRemove()
     )
+    context.user_data['update_vendor'] = 1
     return ADMIN_UPDATE_VENDOR
 
 async def admin_update_vendor(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -861,6 +865,7 @@ async def admin_update_vendor(update: Update, context: ContextTypes.DEFAULT_TYPE
         logger.error(f"Error updating vendor: {e}")
         await update.message.reply_text(f"Ошибка при обновлении вендора: {str(e)}")
     
+    await admin_menu_main(update, context)
     return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):

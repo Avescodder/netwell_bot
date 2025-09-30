@@ -19,10 +19,10 @@ except (ValueError, AttributeError):
 DATABASE_URL = 'sqlite:///netwell_bot.db'
 
 FILES_DIR = 'files'
-PRODUCT_PORTFOLIO_PATH = f'{FILES_DIR}/product_portfolio.pdf'
-GUIDELINE_PATH = f'{FILES_DIR}/guideline.pdf'
+PRODUCT_PORTFOLIO_PATH = f'{FILES_DIR}/product_portfolio.txt'
+GUIDELINE_PATH = f'{FILES_DIR}/guideline.txt'
 LOGOS_URL = 'https://netwell.ru/logos'  
-MARKETING_PRESENTATION_PATH = f'{FILES_DIR}/marketing_presentation.pdf'
+MARKETING_PRESENTATION_PATH = f'{FILES_DIR}/marketing_presentation.txt'
 
 MESSAGES = {
     'welcome': "Уважаемый коллега, мы создали бот, который станет вашим гидом по компании Netwell. Для доступа в меню нажмите кнопку СТАРТ.",

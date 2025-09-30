@@ -193,6 +193,10 @@ class DatabaseManager:
         """Получение вендоров по направлению"""
         return self.session.query(Vendor).filter_by(direction=direction).all()
     
+    def get_vendor_by_id(self, id: int):
+        """Получение вендоров по id"""
+        return self.session.query(Vendor).filter_by(id=id).first()
+
     def get_all_vendors(self):
         """Получение всех вендоров"""
         return self.session.query(Vendor).all()

@@ -1,8 +1,3 @@
-"""
-Главный файл Telegram-бота для компании Netwell
-"""
-
-import logging
 from telegram import Update
 from telegram.ext import (
     Application, 
@@ -15,6 +10,7 @@ from telegram.ext import (
 )
 
 from config import BOT_TOKEN
+from logging_config import setup_logging, log_startup_info, log_shutdown_info
 from handlers import (
     # Основные обработчики
     start, handle_start_button, menu, button_callback,
@@ -25,29 +21,27 @@ from handlers import (
     # Состояния ConversationHandler
     WAITING_NAME, WAITING_COMPANY, WAITING_PHONE, WAITING_EMAIL,
     ADMIN_SEND_MESSAGE, ADMIN_UPDATE_VENDOR, VENDOR_SEARCH,
+    ADMIN_SELECT_USERS, ADMIN_MESSAGE_CONTENT,
     
     # Админские функции
     admin_users, admin_stats, admin_send_start, admin_send_message,
-    admin_update_vendor_start, admin_update_vendor
+    admin_update_vendor_start, admin_update_vendor,
+    admin_select_recipients, admin_process_user_ids
 )
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик ошибок"""
-    logger.error(f"Exception while handling an update: {context.error}")
+    logger.error(f"❌ ОШИБКА: {context.error}", exc_info=context.error)
     
     if update and update.effective_message:
         try:
             await update.effective_message.reply_text(
                 "Произошла ошибка. Попробуйте еще раз или обратитесь к администратору."
             )
-        except Exception:
-            pass  # Игнорируем ошибки при отправке сообщения об ошибке
+        except Exception as e:
+            logger.error(f"Не удалось отправить сообщение об ошибке: {e}")
 
 def main():
     """Основная функция запуска бота"""
@@ -85,9 +79,21 @@ def main():
     
     # Обработчик админской рассылки
     admin_broadcast_handler = ConversationHandler(
-        entry_points=[CommandHandler('send', admin_send_start)],
+        entry_points=[
+            CommandHandler('send', admin_send_start),
+            MessageHandler(filters.Regex(r'^📚 Сделать рассылку$'), admin_send_start)
+        ],
         states={
-            ADMIN_SEND_MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_send_message)]
+            ADMIN_SELECT_USERS: [
+                CallbackQueryHandler(admin_select_recipients, pattern=r'^broadcast_'),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_process_user_ids)
+            ],
+            ADMIN_MESSAGE_CONTENT: [
+                MessageHandler(
+                    (filters.TEXT | filters.PHOTO | filters.Document.ALL | filters.VIDEO) & ~filters.COMMAND,
+                    admin_send_message
+                )
+            ]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         name="admin_broadcast"
@@ -95,7 +101,10 @@ def main():
     
     # Обработчик обновления вендоров
     admin_vendor_handler = ConversationHandler(
-        entry_points=[CommandHandler('update_vendor', admin_update_vendor_start)],
+        entry_points=[
+            CommandHandler('update_vendor', admin_update_vendor_start),
+            MessageHandler(filters.Regex(r'^🛠 Поменять инфо$'), admin_update_vendor_start)
+        ],
         states={
             ADMIN_UPDATE_VENDOR: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_update_vendor)]
         },
@@ -128,11 +137,10 @@ def main():
     
     # ========== ЗАПУСК БОТА ==========
     
-    logger.info("Запускаем бота Netwell...")
+    log_startup_info()
     
-    # Запускаем бота
     application.run_polling(
-        drop_pending_updates=True,  # Игнорируем старые сообщения
+        drop_pending_updates=True,
         allowed_updates=Update.ALL_TYPES
     )
 
@@ -140,7 +148,7 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        logger.info("Бот остановлен пользователем")
+        log_shutdown_info()
     except Exception as e:
-        logger.error(f"Критическая ошибка: {e}")
+        logger.critical(f"💥 КРИТИЧЕСКАЯ ОШИБКА: {e}", exc_info=True)
         raise

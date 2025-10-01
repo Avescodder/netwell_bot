@@ -1,7 +1,3 @@
-"""
-Исправленные обработчики команд и сообщений для бота Netwell
-"""
-
 import os
 import logging
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
@@ -16,7 +12,8 @@ logger = logging.getLogger(__name__)
 WAITING_NAME, WAITING_COMPANY, WAITING_PHONE, WAITING_EMAIL = range(4)
 EDIT_NAME, EDIT_COMPANY, EDIT_PHONE, EDIT_EMAIL = range(4, 8)
 ADMIN_SEND_MESSAGE, ADMIN_UPDATE_VENDOR = range(8, 10)
-VENDOR_SEARCH = range(10, 11)
+VENDOR_SEARCH = 10
+ADMIN_SELECT_USERS, ADMIN_MESSAGE_CONTENT = range(11, 13)
 
 def is_admin(user_id: int) -> bool:
     """Проверка, является ли пользователь администратором"""
@@ -168,7 +165,7 @@ async def handle_directions(update: Update, context: ContextTypes.DEFAULT_TYPE):
         db.log_user_action(update.effective_user.id, 'directions_viewed')
         
     except Exception as e:
-        logger.error(f"Error in handle_directions: {e}")
+        logger.error(f"Ошибка в handle_directions: {e}", exc_info=True)
         await update.message.reply_text(
             "Произошла ошибка при загрузке направлений. Попробуйте позже."
         )
@@ -292,56 +289,6 @@ async def handle_profile_edit(update: Update, context: ContextTypes.DEFAULT_TYPE
     )
     db.log_user_action(update.effective_user.id, 'profile_edit_viewed')
 
-# =================== ФУНКЦИИ РЕДАКТИРОВАНИЯ ПРОФИЛЯ ===================
-
-async def edit_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Редактирование имени пользователя"""
-    new_name = update.message.text.strip()
-    user_id = update.effective_user.id
-    
-    db.update_user_profile(user_id, full_name=new_name)
-    db.log_user_action(user_id, 'profile_name_updated', new_name)
-    
-    await update.message.reply_text(f"Имя успешно изменено на: {new_name}")
-    await show_main_menu(update, context)
-    return ConversationHandler.END
-
-async def edit_company(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Редактирование компании пользователя"""
-    new_company = update.message.text.strip()
-    user_id = update.effective_user.id
-    
-    db.update_user_profile(user_id, company=new_company)
-    db.log_user_action(user_id, 'profile_company_updated', new_company)
-    
-    await update.message.reply_text(f"Компания успешно изменена на: {new_company}")
-    await show_main_menu(update, context)
-    return ConversationHandler.END
-
-async def edit_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Редактирование телефона пользователя"""
-    new_phone = update.message.text.strip()
-    user_id = update.effective_user.id
-    
-    db.update_user_profile(user_id, phone=new_phone)
-    db.log_user_action(user_id, 'profile_phone_updated', new_phone)
-    
-    await update.message.reply_text(f"Телефон успешно изменен на: {new_phone}")
-    await show_main_menu(update, context)
-    return ConversationHandler.END
-
-async def edit_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Редактирование email пользователя"""
-    new_email = update.message.text.strip()
-    user_id = update.effective_user.id
-    
-    db.update_user_profile(user_id, email=new_email)
-    db.log_user_action(user_id, 'profile_email_updated', new_email)
-    
-    await update.message.reply_text(f"Email успешно изменен на: {new_email}")
-    await show_main_menu(update, context)
-    return ConversationHandler.END
-
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик callback-кнопок"""
     query = update.callback_query
@@ -379,39 +326,30 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db.log_user_action(user_id, 'direction_viewed', direction)
         
         elif data.startswith("vendor_"):
-            try:
-                vendor_id = int(data.replace("vendor_", ""))
-                vendor = db.get_vendor_by_id(vendor_id)
-                if vendor:
-                    card_text = vendor.to_card_text()
-                    if len(card_text) > 4000:
-                        card_text = card_text[:4000] + "..."
-                    
-                    try:
-                        dir_index = DIRECTIONS.index(vendor.direction)
-                        back_callback = f"dir_{dir_index}"
-                    except ValueError:
-                        back_callback = "back_to_menu"
-                    
-                    await query.edit_message_text(
-                        card_text,
-                        parse_mode=ParseMode.MARKDOWN,
-                        reply_markup=InlineKeyboardMarkup([[
-                            InlineKeyboardButton("🔙 Назад", callback_data=back_callback)
-                        ]])
-                    )
-                    db.log_user_action(user_id, 'vendor_card_viewed', vendor.name)
-                else:
-                    await query.edit_message_text(
-                        "Информация о компании не найдена.",
-                        reply_markup=InlineKeyboardMarkup([[
-                            InlineKeyboardButton("🔙 В меню", callback_data="back_to_menu")
-                        ]])
-                    )
-            except (ValueError, Exception) as e:
-                logger.error(f"Error processing vendor callback: {e}")
+            vendor_id = int(data.replace("vendor_", ""))
+            vendor = db.get_vendor_by_id(vendor_id)
+            if vendor:
+                card_text = vendor.to_card_text()
+                if len(card_text) > 4000:
+                    card_text = card_text[:4000] + "..."
+                
+                try:
+                    dir_index = DIRECTIONS.index(vendor.direction)
+                    back_callback = f"dir_{dir_index}"
+                except ValueError:
+                    back_callback = "back_to_menu"
+                
                 await query.edit_message_text(
-                    "Произошла ошибка при загрузке информации о компании.",
+                    card_text,
+                    parse_mode=ParseMode.MARKDOWN,
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton("🔙 Назад", callback_data=back_callback)
+                    ]])
+                )
+                db.log_user_action(user_id, 'vendor_card_viewed', vendor.name)
+            else:
+                await query.edit_message_text(
+                    "Информация о компании не найдена.",
                     reply_markup=InlineKeyboardMarkup([[
                         InlineKeyboardButton("🔙 В меню", callback_data="back_to_menu")
                     ]])
@@ -448,7 +386,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await show_support_info(query, context, support_type)
             db.log_user_action(user_id, 'support_info_viewed', support_type)
         
-        # === ОБРАБОТКА РЕДАКТИРОВАНИЯ ПРОФИЛЯ ===
         elif data == "edit_name":
             await query.edit_message_text("Введите новое имя и фамилию:")
             context.user_data['editing_field'] = 'full_name'
@@ -524,7 +461,7 @@ async def show_vendors_by_direction(query, context: ContextTypes.DEFAULT_TYPE, d
         )
         
     except Exception as e:
-        logger.error(f"Error in show_vendors_by_direction: {e}")
+        logger.error(f"Ошибка в show_vendors_by_direction: {e}", exc_info=True)
         await query.edit_message_text(
             "Произошла ошибка при загрузке вендоров.",
             reply_markup=InlineKeyboardMarkup([[
@@ -629,6 +566,7 @@ async def send_file(query, file_path: str, file_description: str):
                     caption=file_description
                 )
         else:
+            logger.error(f"Файл не найден: {file_path}")
             await query.edit_message_text(
                 f"Файл '{file_description}' временно недоступен. Обратитесь к администратору.",
                 reply_markup=InlineKeyboardMarkup([[
@@ -636,7 +574,7 @@ async def send_file(query, file_path: str, file_description: str):
                 ]])
             )
     except Exception as e:
-        logger.error(f"Error sending file: {e}")
+        logger.error(f"Ошибка при отправке файла {file_path}: {e}", exc_info=True)
         await query.edit_message_text(
             "Ошибка при отправке файла.",
             reply_markup=InlineKeyboardMarkup([[
@@ -653,14 +591,12 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         field = context.user_data['editing_field']
         new_value = text.strip()
         
-        # Обновляем профиль
         update_data = {field: new_value}
         db.update_user_profile(user_id, **update_data)
         db.log_user_action(user_id, f'profile_{field}_updated', new_value)
         
         del context.user_data['editing_field']
         
-        # Уведомляем об успешном обновлении
         field_names = {
             'full_name': 'Имя',
             'company': 'Компания', 
@@ -673,42 +609,33 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         await show_main_menu(update, context)
         return
     
-    elif 'send_to_everyone' in context.user_data:
-        del context.user_data['send_to_everyone']
-        await admin_send_message(update, context)
-        return 
+    menu_handlers = {
+        '🏢 О компании': handle_company_info,
+        '🔍 Поиск вендоров': start_vendor_search,
+        '📚 Изучить направления': handle_directions,
+        '🛠 Техподдержка': handle_support,
+        '📊 Маркетинг': handle_marketing,
+        '📞 Отправить запрос': handle_request,
+        '👤 Изменить анкету': handle_profile_edit,
+    }
     
-    elif 'update_vendor' in context.user_data:
-        del context.user_data['update_vendor']
-        await admin_update_vendor(update, context)
-        return 
+    if is_admin(user_id):
+        admin_handlers = {
+            '🏢 Посмотреть пользователей': admin_users,
+            '🔍 Посмотреть статистику': admin_stats,
+            '📚 Сделать рассылку': admin_send_start,
+            '🛠 Поменять инфо': admin_update_vendor_start,
+        }
+        
+        if text in admin_handlers:
+            return await admin_handlers[text](update, context)
     
-    if text == '🏢 О компании':
-        await handle_company_info(update, context)
-    elif text == '🔍 Поиск вендоров':
-        return await start_vendor_search(update, context)
-    elif text == '📚 Изучить направления':
-        await handle_directions(update, context)
-    elif text == '🛠 Техподдержка':
-        await handle_support(update, context)
-    elif text == '📊 Маркетинг':
-        await handle_marketing(update, context)
-    elif text == '📞 Отправить запрос':
-        await handle_request(update, context)
-    elif text == '👤 Изменить анкету':
-        await handle_profile_edit(update, context)
-    elif text == '🏢 Посмотреть пользователей':
-        await admin_users(update, context)
-    elif text == '🔍 Посмотреть статистику':
-        await admin_stats(update, context)
-    elif text == '📚 Сделать рассылку':
-        await admin_send_start(update, context)
-    elif text == '🛠 Поменять инфо':
-        await admin_update_vendor_start(update, context)
-    else:
-        await update.message.reply_text(
-            "Выберите пункт из меню или воспользуйтесь командой /menu"
-        )
+    if text in menu_handlers:
+        return await menu_handlers[text](update, context)
+    
+    await update.message.reply_text(
+        "Выберите пункт из меню или воспользуйтесь командой /menu"
+    )
     
     return ConversationHandler.END
 
@@ -758,61 +685,194 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if stats['popular_actions']:
             text += "🔥 Популярные действия за неделю:\n"
             for action, count in sorted(stats['popular_actions'].items(), key=lambda x: x[1], reverse=True)[:10]:
-                # Экранируем проблемные символы
                 clean_action = str(action).replace('*', '').replace('_', '').replace('`', '')
                 text += f"• {clean_action}: {count}\n"
         else:
             text += "📈 Действий за неделю пока нет\n"
         
-        # Отправляем без parse_mode для избежания ошибок
         await update.message.reply_text(text)
         
     except Exception as e:
-        logger.error(f"Error in admin_stats: {e}")
+        logger.error(f"Ошибка в admin_stats: {e}", exc_info=True)
         await update.message.reply_text(
             "❌ Ошибка при получении статистики. Проверьте логи."
         )
 
 async def admin_send_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начало рассылки сообщения"""
+    """Начало рассылки - выбор адресатов"""
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("У вас нет прав доступа к этой команде.")
         return ConversationHandler.END
     
-    await update.message.reply_text(
-        "Введите текст сообщения для рассылки всем пользователям:",
-        reply_markup=ReplyKeyboardRemove()
-    )
-    context.user_data['send_to_everyone'] = 1
-    return ADMIN_SEND_MESSAGE
-
-async def admin_send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Рассылка сообщения всем пользователям"""
-    message_text = update.message.text
     users = db.get_all_users()
     
+    keyboard = [
+        [InlineKeyboardButton("📢 Всем пользователям", callback_data="broadcast_all")],
+        [InlineKeyboardButton("👤 Выбрать пользователей", callback_data="broadcast_select")],
+        [InlineKeyboardButton("🔙 Отмена", callback_data="broadcast_cancel")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        f"📨 **Рассылка сообщений**\n\n"
+        f"Всего пользователей: {len(users)}\n\n"
+        f"Выберите способ рассылки:",
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=reply_markup
+    )
+    
+    return ADMIN_SELECT_USERS
+
+async def admin_select_recipients(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка выбора получателей рассылки"""
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "broadcast_all":
+        users = db.get_all_users()
+        context.user_data['broadcast_recipients'] = [u.user_id for u in users]
+        
+        await query.edit_message_text(
+            f"✅ Выбраны все пользователи ({len(users)} чел.)\n\n"
+            f"Теперь отправьте сообщение для рассылки.\n"
+            f"Вы можете отправить:\n"
+            f"• Текст\n"
+            f"• Текст + фото\n"
+            f"• Текст + документ\n\n"
+            f"Используйте /cancel для отмены"
+        )
+        return ADMIN_MESSAGE_CONTENT
+    
+    elif query.data == "broadcast_select":
+        users = db.get_all_users()
+        
+        text = "👥 **Список пользователей**\n\n"
+        text += "Отправьте ID пользователей через запятую.\n\n"
+        text += "**Доступные пользователи:**\n"
+        
+        for user in users[:30]:
+            name = user.full_name or user.first_name or "Без имени"
+            company = f" ({user.company})" if user.company else ""
+            text += f"• ID {user.user_id}: {name}{company}\n"
+        
+        if len(users) > 30:
+            text += f"\n... и еще {len(users) - 30} пользователей"
+        
+        text += "\n\n**Пример:** 123456789, 987654321"
+        
+        await query.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
+        return ADMIN_SELECT_USERS
+    
+    elif query.data == "broadcast_cancel":
+        await query.edit_message_text("❌ Рассылка отменена")
+        await admin_menu_main_from_query(query, context)
+        return ConversationHandler.END
+
+async def admin_process_user_ids(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка введенных ID пользователей"""
+    try:
+        user_ids_text = update.message.text.strip()
+        user_ids = [int(uid.strip()) for uid in user_ids_text.split(',')]
+        
+        valid_ids = []
+        for uid in user_ids:
+            if db.get_user(uid):
+                valid_ids.append(uid)
+        
+        if not valid_ids:
+            await update.message.reply_text(
+                "❌ Не найдено ни одного пользователя с указанными ID.\n"
+                "Попробуйте снова или используйте /cancel"
+            )
+            return ADMIN_SELECT_USERS
+        
+        context.user_data['broadcast_recipients'] = valid_ids
+        
+        await update.message.reply_text(
+            f"✅ Выбрано пользователей: {len(valid_ids)}\n\n"
+            f"Теперь отправьте сообщение для рассылки.\n"
+            f"Вы можете отправить:\n"
+            f"• Текст\n"
+            f"• Текст + фото\n"
+            f"• Текст + документ\n\n"
+            f"Используйте /cancel для отмены"
+        )
+        return ADMIN_MESSAGE_CONTENT
+        
+    except ValueError:
+        await update.message.reply_text(
+            "❌ Неверный формат. Используйте числа через запятую.\n"
+            "Пример: 123456789, 987654321\n\n"
+            "Попробуйте снова или используйте /cancel"
+        )
+        return ADMIN_SELECT_USERS
+
+async def admin_send_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Рассылка сообщения выбранным пользователям"""
+    recipients = context.user_data.get('broadcast_recipients', [])
+    
+    if not recipients:
+        await update.message.reply_text("❌ Не выбраны получатели")
+        return ConversationHandler.END
+    
+    message = update.message
     success_count = 0
     error_count = 0
     
-    await update.message.reply_text(f"Начинаю рассылку {len(users)} пользователям...")
+    await update.message.reply_text(f"⏳ Начинаю рассылку {len(recipients)} пользователям...")
     
-    for user in users:
+    for user_id in recipients:
         try:
-            await context.bot.send_message(
-                chat_id=user.user_id,
-                text=f"📢 **Сообщение от администрации Netwell:**\n\n{message_text}",
-                parse_mode=ParseMode.MARKDOWN
-            )
+            # Отправляем текст с медиа (если есть)
+            if message.photo:
+                photo = message.photo[-1]  # Берем фото лучшего качества
+                await context.bot.send_photo(
+                    chat_id=user_id,
+                    photo=photo.file_id,
+                    caption=f"📢 **Сообщение от администрации Netwell:**\n\n{message.caption or ''}",
+                    parse_mode=ParseMode.MARKDOWN
+                )
+            elif message.document:
+                await context.bot.send_document(
+                    chat_id=user_id,
+                    document=message.document.file_id,
+                    caption=f"📢 **Сообщение от администрации Netwell:**\n\n{message.caption or ''}",
+                    parse_mode=ParseMode.MARKDOWN
+                )
+            elif message.video:
+                await context.bot.send_video(
+                    chat_id=user_id,
+                    video=message.video.file_id,
+                    caption=f"📢 **Сообщение от администрации Netwell:**\n\n{message.caption or ''}",
+                    parse_mode=ParseMode.MARKDOWN
+                )
+            else:
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text=f"📢 **Сообщение от администрации Netwell:**\n\n{message.text}",
+                    parse_mode=ParseMode.MARKDOWN
+                )
             success_count += 1
         except Exception as e:
             error_count += 1
-            logger.error(f"Ошибка отправки пользователю {user.user_id}: {e}")
+            logger.error(f"Ошибка отправки пользователю {user_id}: {e}")
     
     await update.message.reply_text(
-        f"Рассылка завершена!\n✅ Успешно: {success_count}\n❌ Ошибок: {error_count}"
+        f"✅ **Рассылка завершена!**\n\n"
+        f"Успешно: {success_count}\n"
+        f"Ошибок: {error_count}"
     )
     
-    db.log_user_action(update.effective_user.id, 'admin_broadcast', f'sent to {success_count} users')
+    logger.warning(f"📨 Рассылка завершена: {success_count} успешно, {error_count} ошибок")
+    
+    db.log_user_action(
+        update.effective_user.id, 
+        'admin_broadcast', 
+        f'sent to {success_count}/{len(recipients)} users'
+    )
+    
+    context.user_data.pop('broadcast_recipients', None)
+    
     await admin_menu_main(update, context)
     return ConversationHandler.END
 
@@ -829,7 +889,6 @@ async def admin_update_vendor_start(update: Update, context: ContextTypes.DEFAUL
         "NetApp|СХД|Лидер в области систем хранения данных|Высокий|США|1992|FAS, AFF, ONTAP",
         reply_markup=ReplyKeyboardRemove()
     )
-    context.user_data['update_vendor'] = 1
     return ADMIN_UPDATE_VENDOR
 
 async def admin_update_vendor(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -839,7 +898,7 @@ async def admin_update_vendor(update: Update, context: ContextTypes.DEFAULT_TYPE
         
         if len(data_parts) < 3:
             await update.message.reply_text(
-                "Неверный формат. Минимум: Название|Направление|Описание"
+                "❌ Неверный формат. Минимум: Название|Направление|Описание"
             )
             return ConversationHandler.END
         
@@ -859,20 +918,43 @@ async def admin_update_vendor(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"✅ Вендор '{vendor.name}' успешно добавлен/обновлен!"
         )
         
+        logger.warning(f"✏️ Вендор обновлен: {vendor.name}")
         db.log_user_action(update.effective_user.id, 'admin_vendor_updated', vendor.name)
         
     except Exception as e:
-        logger.error(f"Error updating vendor: {e}")
-        await update.message.reply_text(f"Ошибка при обновлении вендора: {str(e)}")
+        logger.error(f"Ошибка при обновлении вендора: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ Ошибка при обновлении вендора: {str(e)}")
     
     await admin_menu_main(update, context)
     return ConversationHandler.END
 
+async def admin_menu_main_from_query(query, context: ContextTypes.DEFAULT_TYPE):
+    """Показать админское меню через callback"""
+    keyboard = [
+        ['🏢 Посмотреть пользователей', '🔍 Посмотреть статистику'],
+        ['📚 Сделать рассылку', '🛠 Поменять инфо'],
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    
+    await context.bot.send_message(
+        chat_id=query.from_user.id,
+        text="Выберите интересующий раздел:",
+        reply_markup=reply_markup
+    )
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Отмена текущей операции"""
+    context.user_data.pop('broadcast_recipients', None)
+    context.user_data.pop('editing_field', None)
+    
     await update.message.reply_text(
-        "Операция отменена.",
+        "❌ Операция отменена.",
         reply_markup=ReplyKeyboardRemove()
     )
-    await show_main_menu(update, context)
+    
+    if is_admin(update.effective_user.id):
+        await admin_menu_main(update, context)
+    else:
+        await show_main_menu(update, context)
+    
     return ConversationHandler.END

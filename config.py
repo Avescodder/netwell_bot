@@ -16,7 +16,7 @@ try:
 except (ValueError, AttributeError):
     ADMIN_IDS: List[int] = []
 
-DATABASE_URL = 'sqlite:///netwell_bot.db'
+DATABASE_URL = os.getenv('DB_URL')
 
 FILES_DIR = 'files'
 PRODUCT_PORTFOLIO_PATH = f'{FILES_DIR}/product_portfolio.txt'

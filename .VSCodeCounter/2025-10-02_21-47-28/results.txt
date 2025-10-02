@@ -1,0 +1,36 @@
+Date : 2025-10-02 21:47:28
+Directory : /Users/vsevolodmorozov24/programs/netwell_bot
+Total : 9 files,  1445 codes, 218 comments, 229 blanks, all 1892 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| Python           |          6 |      1,405 |        218 |        221 |      1,844 |
+| YAML             |          1 |         20 |          0 |          2 |         22 |
+| pip requirements |          1 |         12 |          0 |          1 |         13 |
+| Docker           |          1 |          8 |          0 |          5 |         13 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                             | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                |          9 |      1,445 |        218 |        229 |      1,892 |
++------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                         | language         | code       | comment    | blank      | total      |
++------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| /Users/vsevolodmorozov24/programs/netwell_bot/Dockerfile         | Docker           |          8 |          0 |          5 |         13 |
+| /Users/vsevolodmorozov24/programs/netwell_bot/bot.py             | Python           |        115 |         17 |         22 |        154 |
+| /Users/vsevolodmorozov24/programs/netwell_bot/config.py          | Python           |         43 |          3 |         10 |         56 |
+| /Users/vsevolodmorozov24/programs/netwell_bot/db.py              | Python           |        181 |         21 |         35 |        237 |
+| /Users/vsevolodmorozov24/programs/netwell_bot/docker-compose.yml | YAML             |         20 |          0 |          2 |         22 |
+| /Users/vsevolodmorozov24/programs/netwell_bot/handlers.py        | Python           |        849 |         23 |         88 |        960 |
+| /Users/vsevolodmorozov24/programs/netwell_bot/logging_config.py  | Python           |         57 |         17 |         17 |         91 |
+| /Users/vsevolodmorozov24/programs/netwell_bot/requirements.txt   | pip requirements |         12 |          0 |          1 |         13 |
+| /Users/vsevolodmorozov24/programs/netwell_bot/sample_vendors.py  | Python           |        160 |        137 |         49 |        346 |
+| Total                                                            |                  |      1,445 |        218 |        229 |      1,892 |
++------------------------------------------------------------------+------------------+------------+------------+------------+------------+

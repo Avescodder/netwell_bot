@@ -1,0 +1,11 @@
+"filename", "language", "Python", "Docker", "YAML", "pip requirements", "comment", "blank", "total"
+"/Users/vsevolodmorozov24/programs/netwell_bot/Dockerfile", "Docker", 0, 8, 0, 0, 0, 5, 13
+"/Users/vsevolodmorozov24/programs/netwell_bot/bot.py", "Python", 115, 0, 0, 0, 17, 22, 154
+"/Users/vsevolodmorozov24/programs/netwell_bot/config.py", "Python", 43, 0, 0, 0, 3, 10, 56
+"/Users/vsevolodmorozov24/programs/netwell_bot/db.py", "Python", 181, 0, 0, 0, 21, 35, 237
+"/Users/vsevolodmorozov24/programs/netwell_bot/docker-compose.yml", "YAML", 0, 0, 20, 0, 0, 2, 22
+"/Users/vsevolodmorozov24/programs/netwell_bot/handlers.py", "Python", 849, 0, 0, 0, 23, 88, 960
+"/Users/vsevolodmorozov24/programs/netwell_bot/logging_config.py", "Python", 57, 0, 0, 0, 17, 17, 91
+"/Users/vsevolodmorozov24/programs/netwell_bot/requirements.txt", "pip requirements", 0, 0, 0, 12, 0, 1, 13
+"/Users/vsevolodmorozov24/programs/netwell_bot/sample_vendors.py", "Python", 160, 0, 0, 0, 137, 49, 346
+"Total", "-", 1405, 8, 20, 12, 218, 229, 1892

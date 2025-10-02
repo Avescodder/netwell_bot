@@ -68,6 +68,8 @@ class Vendor(Base):
     service_provided = Column(String(10), nullable=True)  
     direction = Column(String(100), nullable=True)  
     description = Column(Text, nullable=True)  
+    vendor_on_our_site = Column(String(10), nullable=True)
+    netwell_on_vendor_site = Column(String(10), nullable=True)
     created_date = Column(DateTime, default=datetime.utcnow)
     
     def to_card_text(self):

@@ -1,7 +1,8 @@
-# Byte-compiled / optimized files
+# Python cache
 __pycache__/
-*.py[cod]
-*$py.class
+*.pyc
+*.pyo
+*.pyd
 
 # Virtual environments
 .venv/
@@ -28,9 +29,12 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Databases
+*.db
+*.sqlite3
+
 # Docker
 .dockerignore
 docker-compose.override.yml
-
 
 TODO.txt

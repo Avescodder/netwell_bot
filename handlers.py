@@ -430,7 +430,7 @@ async def show_main_menu_callback(query, context: ContextTypes.DEFAULT_TYPE):
 async def show_vendors_by_direction(query, context: ContextTypes.DEFAULT_TYPE, direction: str):
     """Показать вендоров по направлению"""
     try:
-        vendors = db.get_vendors_by_direction(direction)
+        vendors = db.get_vendors_by_direction_flexible(direction)
         
         if not vendors:
             await query.edit_message_text(
@@ -441,18 +441,18 @@ async def show_vendors_by_direction(query, context: ContextTypes.DEFAULT_TYPE, d
             )
             return
         
-        text = f"**{direction}**\n\nВыберите вендора для получения подробной информации:\n\n"
+        text = f"📂 **{direction}**\n\n"
+        text += f"Найдено вендоров: {len(vendors)}\n"
+        text += "━━━━━━━━━━━━━━━━━━\n\n"
         
         keyboard = []
-        for vendor in vendors[:10]:
-            description = vendor.description[:40] + "..." if vendor.description and len(vendor.description) > 40 else vendor.description or ""
-            text += f"• **{vendor.name}** - {description}\n"
-            keyboard.append([InlineKeyboardButton(vendor.name, callback_data=f"vendor_{vendor.id}")])
+        for vendor in vendors[:15]:  
+            keyboard.append([InlineKeyboardButton(
+                f"🏢 {vendor.name}", 
+                callback_data=f"vendor_{vendor.id}"
+            )])
         
-        keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")])
-        
-        if len(text) > 4000:
-            text = text[:4000] + "..."
+        keyboard.append([InlineKeyboardButton("🔙 Назад к направлениям", callback_data="back_to_menu")])
         
         await query.edit_message_text(
             text,

@@ -74,41 +74,76 @@ class Vendor(Base):
     
     def to_card_text(self):
         """Форматирование карточки вендора для отображения"""
-        card = f"🏢 **{self.name}**\n\n"
+        card = f"🏢 **{self.name}**\n"
+        card += "━━━━━━━━━━━━━━━━━━\n\n"
         
         if self.priority:
-            card += f"📈 **Приоритет в развитии:** {self.priority}\n"
+            card += f"⭐ **Приоритет:** {self.priority}\n\n"
+        
         if self.origin:
             card += f"🌍 **Происхождение:** {self.origin}\n"
         if self.founded_year:
             card += f"📅 **Год основания:** {self.founded_year}\n"
-        if self.categories:
-            card += f"📦 **Категории продуктов:** {self.categories}\n"
-        if self.key_products:
-            card += f"🔑 **Ключевые продукты:** {self.key_products}\n"
-        if self.target_customers:
-            card += f"👥 **Потенциальные заказчики:** {self.target_customers}\n"
-        if self.advantages:
-            card += f"⭐ **Конкурентные преимущества:** {self.advantages}\n"
         
+        if self.categories:
+            card += f"\n📦 **Категории продуктов:**\n"
+            categories_list = [cat.strip() for cat in self.categories.split('\n') if cat.strip()]
+            for cat in categories_list[:5]:  # максимум 5 категорий
+                card += f"  • {cat}\n"
+        
+        if self.key_products:
+            card += f"\n🔑 **Ключевые продукты:**\n"
+            products_list = [prod.strip() for prod in self.key_products.split('\n') if prod.strip()]
+            for prod in products_list[:5]:  # максимум 5 продуктов
+                card += f"  • {prod}\n"
+        
+        if self.target_customers:
+            card += f"\n👥 **Целевые клиенты:**\n"
+            customers_list = [cust.strip() for cust in self.target_customers.split('\n') if cust.strip()]
+            for cust in customers_list[:5]:  # максимум 5 пунктов
+                card += f"  • {cust}\n"
+        
+        if self.advantages:
+            card += f"\n⭐ **Преимущества:**\n"
+            advantages_list = [adv.strip() for adv in self.advantages.split('\n') if adv.strip()]
+            for adv in advantages_list[:5]:
+                card += f"  • {adv}\n"
+        
+        # Реестры в одну строку
         registries = []
-        if self.software_registry == 'Да':
+        if self.software_registry and 'да' in self.software_registry.lower():
             registries.append('Реестр ПО')
-        if self.fstek == 'Да':
+        if self.fstek and 'да' in self.fstek.lower():
             registries.append('ФСТЭК')
-        if self.fsb == 'Да':
+        if self.fsb and 'да' in self.fsb.lower():
             registries.append('ФСБ')
         if registries:
-            card += f"📋 **Включены в:** {', '.join(registries)}\n"
+            card += f"\n📋 **Сертификации:** {', '.join(registries)}\n"
         
         if self.main_competitors:
-            card += f"🥊 **Основные конкуренты:** {self.main_competitors}\n"
-        if self.certified_engineers == 'Да':
-            card += f"👨‍🔧 **Сертифицированные инженеры:** Есть\n"
-        if self.warehouse_availability == 'Да':
-            card += f"📦 **Оборудование на складе:** Есть\n"
-        if self.service_provided == 'Да':
-            card += f"🔧 **Сервисное обслуживание:** Предоставляем\n"
+            competitors_list = [comp.strip() for comp in self.main_competitors.split('\n') if comp.strip()]
+            if len(competitors_list) > 1:
+                card += f"\n🥊 **Конкуренты:** {', '.join(competitors_list[:3])}\n"
+            else:
+                card += f"\n🥊 **Конкуренты:** {self.main_competitors}\n"
+        
+        # Дополнительная информация в одну строку с эмодзи-индикаторами
+        indicators = []
+        if self.certified_engineers and 'да' in str(self.certified_engineers).lower():
+            indicators.append('✅ Инженеры')
+        if self.warehouse_availability and 'да' in str(self.warehouse_availability).lower():
+            indicators.append('✅ Склад')
+        if self.service_provided and 'да' in str(self.service_provided).lower():
+            indicators.append('✅ Сервис')
+        
+        if indicators:
+            card += f"\n{'  '.join(indicators)}\n"
+        
+        if self.partner_program:
+            card += f"\n🤝 **Партнерская программа:**\n{self.partner_program[:200]}\n"
+        
+        if self.sales_recommendations:
+            card += f"\n💡 **Рекомендации по продажам:**\n{self.sales_recommendations[:200]}\n"
         
         return card
 
@@ -186,6 +221,14 @@ class DatabaseManager:
         
         self.session.commit()
         return vendor
+    
+    def get_vendors_by_direction_flexible(self, direction: str):
+        """Получение вендоров по направлению (гибкий поиск в categories)"""
+        vendors = self.session.query(Vendor).filter(
+            (Vendor.direction == direction) | 
+            (Vendor.categories.like(f'%{direction}%'))
+        ).all()
+        return vendors
     
     def get_vendor(self, name: str):
         """Поиск вендора по названию"""

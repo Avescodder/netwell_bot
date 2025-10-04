@@ -878,53 +878,86 @@ async def admin_send_message(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def admin_update_vendor_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало обновления вендора"""
+#     if not is_admin(update.effective_user.id):
+#         await update.message.reply_text("У вас нет прав доступа к этой команде.")
+#         return ConversationHandler.END
+    
+#     await update.message.reply_text(
+#         "Введите данные вендора в формате:\n\n"
+#         "Название|Направление|Описание|Приоритет|Происхождение|Год|Продукты\n\n"
+#         "Пример:\n"
+#         "NetApp|СХД|Лидер в области систем хранения данных|Высокий|США|1992|FAS, AFF, ONTAP",
+#         reply_markup=ReplyKeyboardRemove()
+#     )
+#     return ADMIN_UPDATE_VENDOR
+
+# async def admin_update_vendor(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#     """Обновление информации о вендоре"""
+#     try:
+#         data_parts = update.message.text.split('|')
+        
+#         if len(data_parts) < 3:
+#             await update.message.reply_text(
+#                 "❌ Неверный формат. Минимум: Название|Направление|Описание"
+#             )
+#             return ConversationHandler.END
+        
+#         vendor_data = {
+#             'name': data_parts[0].strip(),
+#             'direction': data_parts[1].strip(),
+#             'description': data_parts[2].strip(),
+#             'priority': data_parts[3].strip() if len(data_parts) > 3 else None,
+#             'origin': data_parts[4].strip() if len(data_parts) > 4 else None,
+#             'founded_year': int(data_parts[5].strip()) if len(data_parts) > 5 and data_parts[5].strip().isdigit() else None,
+#             'key_products': data_parts[6].strip() if len(data_parts) > 6 else None,
+#         }
+        
+#         vendor = db.add_vendor(**vendor_data)
+        
+#         await update.message.reply_text(
+#             f"✅ Вендор '{vendor.name}' успешно добавлен/обновлен!"
+#         )
+        
+#         logger.warning(f"✏️ Вендор обновлен: {vendor.name}")
+#         db.log_user_action(update.effective_user.id, 'admin_vendor_updated', vendor.name)
+        
+#     except Exception as e:
+#         logger.error(f"Ошибка при обновлении вендора: {e}", exc_info=True)
+#         await update.message.reply_text(f"❌ Ошибка при обновлении вендора: {str(e)}")
+    
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("У вас нет прав доступа к этой команде.")
-        return ConversationHandler.END
+        return
     
-    await update.message.reply_text(
-        "Введите данные вендора в формате:\n\n"
-        "Название|Направление|Описание|Приоритет|Происхождение|Год|Продукты\n\n"
-        "Пример:\n"
-        "NetApp|СХД|Лидер в области систем хранения данных|Высокий|США|1992|FAS, AFF, ONTAP",
-        reply_markup=ReplyKeyboardRemove()
-    )
-    return ADMIN_UPDATE_VENDOR
-
-async def admin_update_vendor(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обновление информации о вендоре"""
+    await update.message.reply_text("⏳ Начинаю синхронизацию с Google Sheets...")
+    
     try:
-        data_parts = update.message.text.split('|')
+        from sample_vendors import add_vendors_from_sheet
         
-        if len(data_parts) < 3:
-            await update.message.reply_text(
-                "❌ Неверный формат. Минимум: Название|Направление|Описание"
-            )
-            return ConversationHandler.END
+        # Перенаправляем вывод в строку
+        import io
+        import sys
         
-        vendor_data = {
-            'name': data_parts[0].strip(),
-            'direction': data_parts[1].strip(),
-            'description': data_parts[2].strip(),
-            'priority': data_parts[3].strip() if len(data_parts) > 3 else None,
-            'origin': data_parts[4].strip() if len(data_parts) > 4 else None,
-            'founded_year': int(data_parts[5].strip()) if len(data_parts) > 5 and data_parts[5].strip().isdigit() else None,
-            'key_products': data_parts[6].strip() if len(data_parts) > 6 else None,
-        }
+        old_stdout = sys.stdout
+        sys.stdout = buffer = io.StringIO()
         
-        vendor = db.add_vendor(**vendor_data)
+        add_vendors_from_sheet()
         
+        output = buffer.getvalue()
+        sys.stdout = old_stdout
+        
+        # Отправляем результат
         await update.message.reply_text(
-            f"✅ Вендор '{vendor.name}' успешно добавлен/обновлен!"
+            f"✅ Синхронизация завершена!\n\n```\n{output[-1000:]}\n```",
+            parse_mode=ParseMode.MARKDOWN
         )
         
-        logger.warning(f"✏️ Вендор обновлен: {vendor.name}")
-        db.log_user_action(update.effective_user.id, 'admin_vendor_updated', vendor.name)
+        logger.warning(f"📊 Синхронизация вендоров выполнена админом {update.effective_user.id}")
         
     except Exception as e:
-        logger.error(f"Ошибка при обновлении вендора: {e}", exc_info=True)
-        await update.message.reply_text(f"❌ Ошибка при обновлении вендора: {str(e)}")
-    
+        logger.error(f"Ошибка синхронизации: {e}", exc_info=True)
+        await update.message.reply_text(f"❌ Ошибка синхронизации: {str(e)}")
+        
     await admin_menu_main(update, context)
     return ConversationHandler.END
 

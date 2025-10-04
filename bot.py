@@ -25,7 +25,7 @@ from handlers import (
     
     # Админские функции
     admin_users, admin_stats, admin_send_start, admin_send_message,
-    admin_update_vendor_start, admin_update_vendor,
+    # admin_update_vendor_start, admin_update_vendor,
     admin_select_recipients, admin_process_user_ids
 )
 
@@ -100,17 +100,17 @@ def main():
     )
     
     # Обработчик обновления вендоров
-    admin_vendor_handler = ConversationHandler(
-        entry_points=[
-            CommandHandler('update_vendor', admin_update_vendor_start),
-            MessageHandler(filters.Regex(r'^🛠 Поменять инфо$'), admin_update_vendor_start)
-        ],
-        states={
-            ADMIN_UPDATE_VENDOR: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_update_vendor)]
-        },
-        fallbacks=[CommandHandler('cancel', cancel)],
-        name="admin_vendor_update"
-    )
+    # admin_vendor_handler = ConversationHandler(
+    #     entry_points=[
+    #         CommandHandler('update_vendor', admin_update_vendor_start),
+    #         MessageHandler(filters.Regex(r'^🛠 Поменять инфо$'), admin_update_vendor_start)
+    #     ],
+    #     states={
+    #         ADMIN_UPDATE_VENDOR: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_update_vendor)]
+    #     },
+    #     fallbacks=[CommandHandler('cancel', cancel)],
+    #     name="admin_vendor_update"
+    # )
     
     # ========== ДОБАВЛЯЕМ ОБРАБОТЧИКИ ==========
     
@@ -118,7 +118,7 @@ def main():
     application.add_handler(registration_handler)
     application.add_handler(vendor_search_handler)
     application.add_handler(admin_broadcast_handler)
-    application.add_handler(admin_vendor_handler)
+    # application.add_handler(admin_vendor_handler)
     
     # Команды
     application.add_handler(CommandHandler('menu', menu))

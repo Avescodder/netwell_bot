@@ -3,8 +3,8 @@ import logging
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import ContextTypes, ConversationHandler
 from telegram.constants import ParseMode
-from db import db
-from config import ADMIN_IDS, MESSAGES, DIRECTIONS, MANAGERS_CONTACTS, PRODUCT_PORTFOLIO_PATH, GUIDELINE_PATH, LOGOS_URL, MARKETING_PRESENTATION_PATH
+from db import db, VendorDirection
+from config import ADMIN_IDS, MESSAGES, DIRECTIONS, MANAGERS_CONTACTS, PRODUCT_PORTFOLIO_PATH, GUIDELINE_PATH, LOGOS_URL, MARKETING_PRESENTATION_LINK
 
 logger = logging.getLogger(__name__)
 
@@ -354,6 +354,19 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         InlineKeyboardButton("🔙 В меню", callback_data="back_to_menu")
                     ]])
                 )
+
+        elif data.startswith("vdir_"):
+            vendor_id = int(data.replace("vdir_", ""))
+            vendor = db.session.query(VendorDirection).filter_by(id=vendor_id).first()
+            if vendor:
+                card_text = vendor.to_card_text()
+                await query.edit_message_text(
+                    card_text,
+                    parse_mode=ParseMode.MARKDOWN,
+                    reply_markup=InlineKeyboardMarkup([[
+                        InlineKeyboardButton("🔙 Назад", callback_data=f"dir_{DIRECTIONS.index(vendor.direction)}")
+                    ]])
+                )
         
         elif data.startswith("req_"):
             dir_index = int(data.replace("req_", ""))
@@ -369,8 +382,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db.log_user_action(user_id, 'manager_contact_viewed', direction)
         
         elif data == "marketing_presentation":
-            await send_file(query, MARKETING_PRESENTATION_PATH, "Маркетинговая презентация")
-            db.log_user_action(user_id, 'file_downloaded', 'marketing_presentation')
+            await query.edit_message_text(
+                f"Презентация доступна по ссылке: {MARKETING_PRESENTATION_LINK}",
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")
+                ]])
+            )
+            db.log_user_action(user_id, 'presentation_viewed')
         
         elif data == "marketing_contacts":
             await query.edit_message_text(
@@ -428,9 +446,9 @@ async def show_main_menu_callback(query, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def show_vendors_by_direction(query, context: ContextTypes.DEFAULT_TYPE, direction: str):
-    """Показать вендоров по направлению"""
+    """Показать вендоров по направлению (из НОВОЙ таблицы)"""
     try:
-        vendors = db.get_vendors_by_direction_flexible(direction)
+        vendors = db.get_vendors_by_direction_new(direction)
         
         if not vendors:
             await query.edit_message_text(
@@ -442,14 +460,14 @@ async def show_vendors_by_direction(query, context: ContextTypes.DEFAULT_TYPE, d
             return
         
         text = f"📂 **{direction}**\n\n"
-        text += f"Найдено вендоров: {len(vendors)}\n"
+        text += "Ниже представлены решения вендоров по данному направлению. Нажмите на интересующего вендора, чтобы узнать подробнее.\n\n"
         text += "━━━━━━━━━━━━━━━━━━\n\n"
         
         keyboard = []
-        for vendor in vendors[:15]:  
+        for vendor in vendors[:20]:
             keyboard.append([InlineKeyboardButton(
-                f"🏢 {vendor.name}", 
-                callback_data=f"vendor_{vendor.id}"
+                f"🏢 {vendor.vendor_name}", 
+                callback_data=f"vdir_{vendor.id}"
             )])
         
         keyboard.append([InlineKeyboardButton("🔙 Назад к направлениям", callback_data="back_to_menu")])
@@ -462,12 +480,6 @@ async def show_vendors_by_direction(query, context: ContextTypes.DEFAULT_TYPE, d
         
     except Exception as e:
         logger.error(f"Ошибка в show_vendors_by_direction: {e}", exc_info=True)
-        await query.edit_message_text(
-            "Произошла ошибка при загрузке вендоров.",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")
-            ]])
-        )
 
 async def show_support_info(query, context: ContextTypes.DEFAULT_TYPE, support_type: str):
     """Показать информацию о технической поддержке"""
@@ -823,7 +835,6 @@ async def admin_send_message(update: Update, context: ContextTypes.DEFAULT_TYPE)
     
     for user_id in recipients:
         try:
-            # Отправляем текст с медиа (если есть)
             if message.photo:
                 photo = message.photo[-1]  # Берем фото лучшего качества
                 await context.bot.send_photo(
@@ -878,53 +889,6 @@ async def admin_send_message(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def admin_update_vendor_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало обновления вендора"""
-#     if not is_admin(update.effective_user.id):
-#         await update.message.reply_text("У вас нет прав доступа к этой команде.")
-#         return ConversationHandler.END
-    
-#     await update.message.reply_text(
-#         "Введите данные вендора в формате:\n\n"
-#         "Название|Направление|Описание|Приоритет|Происхождение|Год|Продукты\n\n"
-#         "Пример:\n"
-#         "NetApp|СХД|Лидер в области систем хранения данных|Высокий|США|1992|FAS, AFF, ONTAP",
-#         reply_markup=ReplyKeyboardRemove()
-#     )
-#     return ADMIN_UPDATE_VENDOR
-
-# async def admin_update_vendor(update: Update, context: ContextTypes.DEFAULT_TYPE):
-#     """Обновление информации о вендоре"""
-#     try:
-#         data_parts = update.message.text.split('|')
-        
-#         if len(data_parts) < 3:
-#             await update.message.reply_text(
-#                 "❌ Неверный формат. Минимум: Название|Направление|Описание"
-#             )
-#             return ConversationHandler.END
-        
-#         vendor_data = {
-#             'name': data_parts[0].strip(),
-#             'direction': data_parts[1].strip(),
-#             'description': data_parts[2].strip(),
-#             'priority': data_parts[3].strip() if len(data_parts) > 3 else None,
-#             'origin': data_parts[4].strip() if len(data_parts) > 4 else None,
-#             'founded_year': int(data_parts[5].strip()) if len(data_parts) > 5 and data_parts[5].strip().isdigit() else None,
-#             'key_products': data_parts[6].strip() if len(data_parts) > 6 else None,
-#         }
-        
-#         vendor = db.add_vendor(**vendor_data)
-        
-#         await update.message.reply_text(
-#             f"✅ Вендор '{vendor.name}' успешно добавлен/обновлен!"
-#         )
-        
-#         logger.warning(f"✏️ Вендор обновлен: {vendor.name}")
-#         db.log_user_action(update.effective_user.id, 'admin_vendor_updated', vendor.name)
-        
-#     except Exception as e:
-#         logger.error(f"Ошибка при обновлении вендора: {e}", exc_info=True)
-#         await update.message.reply_text(f"❌ Ошибка при обновлении вендора: {str(e)}")
-    
     if not is_admin(update.effective_user.id):
         await update.message.reply_text("У вас нет прав доступа к этой команде.")
         return
@@ -933,20 +897,19 @@ async def admin_update_vendor_start(update: Update, context: ContextTypes.DEFAUL
     
     try:
         from sample_vendors import add_vendors_from_sheet
-        
-        # Перенаправляем вывод в строку
+        from import_directions import import_vendor_directions
         import io
         import sys
         
         old_stdout = sys.stdout
         sys.stdout = buffer = io.StringIO()
         
+        import_vendor_directions()
         add_vendors_from_sheet()
         
         output = buffer.getvalue()
         sys.stdout = old_stdout
         
-        # Отправляем результат
         await update.message.reply_text(
             f"✅ Синхронизация завершена!\n\n```\n{output[-1000:]}\n```",
             parse_mode=ParseMode.MARKDOWN

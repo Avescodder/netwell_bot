@@ -166,6 +166,58 @@ class UserLog(Base):
             'timestamp': self.timestamp.isoformat() if self.timestamp else None
         }
 
+
+class VendorDirection(Base):
+    """Таблица вендоров по направлениям (для раздела "Изучить направления")"""
+    __tablename__ = 'vendor_directions'
+    
+    id = Column(Integer, primary_key=True)
+    direction = Column(String(100), nullable=False)  
+    vendor_name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)  
+    origin = Column(String(100), nullable=True)  
+    categories = Column(Text, nullable=True)  
+    key_products = Column(Text, nullable=True) 
+    advantages = Column(Text, nullable=True) 
+    registries = Column(Text, nullable=True)
+    created_date = Column(DateTime, default=datetime.utcnow)
+    
+    def to_card_text(self):
+        """Форматирование карточки для направления"""
+        card = f"🏢 **{self.vendor_name}**\n"
+        card += "━━━━━━━━━━━━━━━━━━\n\n"
+        
+        if self.description:
+            card += f"{self.description}\n\n"
+        
+        if self.origin:
+            card += f"🌍 **Происхождение:** {self.origin}\n\n"
+        
+        if self.categories:
+            card += f"📦 **Категории продуктов:**\n"
+            categories_list = [cat.strip() for cat in self.categories.split('\n') if cat.strip()]
+            for cat in categories_list[:5]:
+                card += f"  • {cat}\n"
+            card += "\n"
+        
+        if self.key_products:
+            card += f"🔑 **Ключевые продукты:**\n"
+            products_list = [prod.strip() for prod in self.key_products.split('\n') if prod.strip()]
+            for prod in products_list[:5]:
+                card += f"  • {prod}\n"
+            card += "\n"
+        
+        if self.advantages:
+            card += f"⭐ **Конкурентные преимущества:**\n"
+            advantages_list = [adv.strip() for adv in self.advantages.split('\n') if adv.strip()]
+            for adv in advantages_list[:5]:
+                card += f"  • {adv}\n"
+            card += "\n"
+        
+        if self.registries:
+            card += f"📋 **Сертификации:** {self.registries}\n"
+        
+        return card
 class DatabaseManager:
     """Менеджер для работы с базой данных"""
     
@@ -270,6 +322,33 @@ class DatabaseManager:
             'active_users': active_users,
             'popular_actions': action_counts
         }
+
+    def add_vendor_direction(self, **data):
+        """Добавление или обновление вендора по направлению"""
+        vendor_dir = self.session.query(VendorDirection).filter_by(
+            direction=data['direction'],
+            vendor_name=data['vendor_name']
+        ).first()
+        
+        if vendor_dir:
+            for key, value in data.items():
+                if hasattr(vendor_dir, key):
+                    setattr(vendor_dir, key, value)
+        else:
+            vendor_dir = VendorDirection(**data)
+            self.session.add(vendor_dir)
+        
+        self.session.commit()
+        return vendor_dir
+
+    def get_vendors_by_direction_new(self, direction: str):
+        """Получение вендоров по направлению из новой таблицы"""
+        return self.session.query(VendorDirection).filter_by(direction=direction).all()
+
+    def clear_vendor_directions(self):
+        """Очистка таблицы направлений (для полной перезагрузки)"""
+        self.session.query(VendorDirection).delete()
+        self.session.commit()
     
     def close(self):
         """Закрытие соединения с базой данных"""

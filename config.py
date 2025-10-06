@@ -22,7 +22,7 @@ FILES_DIR = 'files'
 PRODUCT_PORTFOLIO_PATH = f'{FILES_DIR}/Products.pdf'
 GUIDELINE_PATH = f'{FILES_DIR}/NetwellGuideline.pdf'
 LOGOS_URL = 'https://clck.ru/3PXN9g'  
-MARKETING_PRESENTATION_PATH = f'{FILES_DIR}/Marketing.pdf'
+MARKETING_PRESENTATION_LINK = 'https://clck.ru/3Pab7m'
 
 MESSAGES = {
     'welcome': "Уважаемый коллега, мы создали бот, который станет вашим гидом по компании Netwell. Для доступа в меню нажмите кнопку СТАРТ.",
@@ -45,12 +45,12 @@ DIRECTIONS = [
 ]
 
 MANAGERS_CONTACTS = {
-    'СХД': 'Иван Петров, Старший менеджер, ipetrov@netwell.ru',
-    'Сервера': 'Мария Сидорова, Ведущий менеджер, msidorova@netwell.ru',
-    'ИБ': 'Алексей Козлов, Специалист по ИБ, akozlov@netwell.ru',
-    'Инженерная инфраструктура': 'Отдел инфраструктуры, infrastructure@netwell.ru',
-    'Сети': 'Отдел сетевых решений, networks@netwell.ru',
-    'Унифицированные коммуникации': 'Отдел коммуникаций, communications@netwell.ru'
+    'СХД': 'Иван Петров, Старший менеджер, info@netwell.ru',
+    'Сервера': 'Мария Сидорова, Ведущий менеджер, info@netwell.ru',
+    'ИБ': 'Алексей Козлов, Специалист по ИБ, info@netwell.ru',
+    'Инженерная инфраструктура': 'Отдел инфраструктуры, info@netwell.ru',
+    'Сети': 'Отдел сетевых решений, info@netwell.ru',
+    'Унифицированные коммуникации': 'Отдел коммуникаций, info@netwell.ru'
 }
 
 os.makedirs(FILES_DIR, exist_ok=True)

@@ -4,7 +4,7 @@ from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKe
 from telegram.ext import ContextTypes, ConversationHandler
 from telegram.constants import ParseMode
 from db import db, VendorDirection
-from config import ADMIN_IDS, MESSAGES, DIRECTIONS, MANAGERS_CONTACTS, PRODUCT_PORTFOLIO_PATH, GUIDELINE_PATH, LOGOS_URL, MARKETING_PRESENTATION_LINK
+from config import ADMIN_IDS, MESSAGES, DIRECTIONS, MANAGERS_CONTACTS, PRODUCT_PORTFOLIO_URL, GUIDELINE_PATH, LOGOS_URL, MARKETING_PRESENTATION_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -206,22 +206,14 @@ async def handle_marketing(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка раздела 'Отправить запрос'"""
-    keyboard = []
-    for i in range(0, len(DIRECTIONS), 2):
-        row = []
-        row.append(InlineKeyboardButton(DIRECTIONS[i], callback_data=f"req_{i}"))
-        if i + 1 < len(DIRECTIONS):
-            row.append(InlineKeyboardButton(DIRECTIONS[i + 1], callback_data=f"req_{i + 1}"))
-        keyboard.append(row)
-    
-    keyboard.append([InlineKeyboardButton("🔙 Назад в меню", callback_data="back_to_menu")])
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
     await update.message.reply_text(
-        MESSAGES['request_intro'],
-        reply_markup=reply_markup
-    )
-    db.log_user_action(update.effective_user.id, 'request_viewed')
+                f"{MANAGERS_CONTACTS}",
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")
+                ]])
+            )
+    db.log_user_action(update.effective_user.id, 'manager_contact_viewed')
 
 async def start_vendor_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало поиска вендора"""
@@ -303,8 +295,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await show_main_menu_callback(query, context)
         
         elif data == "product_portfolio":
-            await send_file(query, PRODUCT_PORTFOLIO_PATH, "Продуктовый портфель")
-            db.log_user_action(user_id, 'file_downloaded', 'product_portfolio')
+            await query.edit_message_text(
+                f"Продуктовый портфель доступен по ссылке: {PRODUCT_PORTFOLIO_URL}",
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")
+                ]])
+            )
+            db.log_user_action(user_id, 'products_viewed')
         
         elif data == "guideline":
             await send_file(query, GUIDELINE_PATH, "Гайдлайн")
@@ -368,27 +365,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     ]])
                 )
         
-        elif data.startswith("req_"):
-            dir_index = int(data.replace("req_", ""))
-            direction = DIRECTIONS[dir_index]
-            contact = MANAGERS_CONTACTS.get(direction, "Контакт не найден")
-            await query.edit_message_text(
-                f"**{direction}**\n\n{contact}",
-                parse_mode=ParseMode.MARKDOWN,
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")
-                ]])
-            )
-            db.log_user_action(user_id, 'manager_contact_viewed', direction)
-        
         elif data == "marketing_presentation":
-            await query.edit_message_text(
-                f"Презентация доступна по ссылке: {MARKETING_PRESENTATION_LINK}",
-                reply_markup=InlineKeyboardMarkup([[
-                    InlineKeyboardButton("🔙 Назад", callback_data="back_to_menu")
-                ]])
-            )
-            db.log_user_action(user_id, 'presentation_viewed')
+            await send_file(query, MARKETING_PRESENTATION_PATH, "Маркетинговая презентация")
+            db.log_user_action(user_id, 'file_downloaded', 'marketing_presentation')
         
         elif data == "marketing_contacts":
             await query.edit_message_text(

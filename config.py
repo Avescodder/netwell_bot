@@ -19,10 +19,10 @@ except (ValueError, AttributeError):
 DATABASE_URL = os.getenv('DB_URL')
 
 FILES_DIR = 'files'
-PRODUCT_PORTFOLIO_PATH = f'{FILES_DIR}/Products.pdf'
+PRODUCT_PORTFOLIO_URL = 'https://clck.ru/3Pab7m'
 GUIDELINE_PATH = f'{FILES_DIR}/NetwellGuideline.pdf'
 LOGOS_URL = 'https://clck.ru/3PXN9g'  
-MARKETING_PRESENTATION_LINK = 'https://clck.ru/3Pab7m'
+MARKETING_PRESENTATION_PATH = f'{FILES_DIR}/Marketing.pdf'
 
 MESSAGES = {
     'welcome': "Уважаемый коллега, мы создали бот, который станет вашим гидом по компании Netwell. Для доступа в меню нажмите кнопку СТАРТ.",
@@ -32,7 +32,6 @@ MESSAGES = {
     'marketing_contacts': """По общим вопросам обращайтесь в отдел маркетинга Netwell, на почту: marketing@netwell.ru
 
 Для персональных запросов свяжитесь с Ольгой Михеевой, руководителем отдела маркетинга Netwell. Почта: omikheeva@netwell.ru""",
-    'request_intro': "Выберете интересующее направление, для получения контактов ответственного Sale-менеджера.",
     'support_intro': """Мы предоставляем профессиональную сервисную поддержку для оборудования ведущих западных производителей в области СХД, серверных и сетевых решений.
 
 Выберите интересующее направление, чтобы узнать подробности.
@@ -44,13 +43,6 @@ DIRECTIONS = [
     'СХД', 'Сервера', 'ИБ', 'Инженерная инфраструктура', 'Сети', 'Унифицированные коммуникации'
 ]
 
-MANAGERS_CONTACTS = {
-    'СХД': 'Иван Петров, Старший менеджер, info@netwell.ru',
-    'Сервера': 'Мария Сидорова, Ведущий менеджер, info@netwell.ru',
-    'ИБ': 'Алексей Козлов, Специалист по ИБ, info@netwell.ru',
-    'Инженерная инфраструктура': 'Отдел инфраструктуры, info@netwell.ru',
-    'Сети': 'Отдел сетевых решений, info@netwell.ru',
-    'Унифицированные коммуникации': 'Отдел коммуникаций, info@netwell.ru'
-}
+MANAGERS_CONTACTS = 'Если у вас есть вопрос или вы хотите уточнить информацию о продуктах, направьте запрос на почту info@netwell.ru'
 
 os.makedirs(FILES_DIR, exist_ok=True)

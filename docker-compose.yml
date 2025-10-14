@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   bot:
     build: .
@@ -7,16 +5,19 @@ services:
     command: python bot.py
     restart: always
     volumes:
-      - .:/app
+      - ./data:/app/data  
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
-
+    depends_on:
+      loader:
+        condition: service_completed_successfully
+        
   loader:
     build: .
     container_name: data_loader
     command: python sample_vendors.py
-    restart: "no" 
+    restart: "no"
     volumes:
-      - .:/app
+      - ./data:/app/data  
     environment:
       - DB_URL=${DB_URL}

@@ -2,8 +2,7 @@ import requests
 import csv
 from io import StringIO
 from db import db, VendorDirection
-
-SHEET_ID = "1dZVhfNqjS9NalZrjd3svUnz2yNngWd2QVYbuRUbQ12U"
+from config import TABLE_DIRECTIONS_SHEET_ID as SHEET_ID
 
 
 DIRECTION_TABS = {

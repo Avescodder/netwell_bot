@@ -18,11 +18,15 @@ except (ValueError, AttributeError):
 
 DATABASE_URL = os.getenv('DB_URL')
 
+TABLE_DIRECTIONS_SHEET_ID = os.getenv('TABLE_DIRECTIONS_SHEET_ID')
+TABLE_VENDORS_SHEET_ID = os.getenv('TABLE_VENDORS_SHEET_ID')
+
 FILES_DIR = 'files'
-PRODUCT_PORTFOLIO_URL = 'https://clck.ru/3Pab7m'
+PRODUCT_PORTFOLIO_URL = os.getenv('PRODUCT_PORTFOLIO_URL')
 GUIDELINE_PATH = f'{FILES_DIR}/NetwellGuideline.pdf'
-LOGOS_URL = 'https://clck.ru/3PXN9g'  
+LOGOS_URL = os.getenv('LOGOS_URL') 
 MARKETING_PRESENTATION_PATH = f'{FILES_DIR}/Marketing.pdf'
+
 
 MESSAGES = {
     'welcome': "Уважаемый коллега, мы создали бот, который станет вашим гидом по компании Netwell. Для доступа в меню нажмите кнопку СТАРТ.",

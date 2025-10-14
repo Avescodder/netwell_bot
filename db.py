@@ -109,7 +109,6 @@ class Vendor(Base):
             for adv in advantages_list[:5]:
                 card += f"  • {adv}\n"
         
-        # Реестры в одну строку
         registries = []
         if self.software_registry and 'да' in self.software_registry.lower():
             registries.append('Реестр ПО')
@@ -127,7 +126,6 @@ class Vendor(Base):
             else:
                 card += f"\n🥊 **Конкуренты:** {self.main_competitors}\n"
         
-        # Дополнительная информация в одну строку с эмодзи-индикаторами
         indicators = []
         if self.certified_engineers and 'да' in str(self.certified_engineers).lower():
             indicators.append('✅ Инженеры')

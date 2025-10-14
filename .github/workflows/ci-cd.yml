@@ -19,8 +19,10 @@ jobs:
           script: |
             cd ${{ secrets.PROJECT_PATH }}
             
-            # Бэкап базы данных
-            docker-compose exec -T bot cp /app/netwell_bot.db /app/backup_$(date +%Y%m%d_%H%M%S).db || true
+            # Бэкап базы данных (если контейнер запущен)
+            if [ "$(docker ps -q -f name=telegram_bot)" ]; then
+              docker exec telegram_bot cp /app/data/*.db /app/data/backup_$(date +%Y%m%d_%H%M%S).db 2>/dev/null || echo "Backup skipped"
+            fi
             
             # Остановка
             docker-compose down
@@ -28,25 +30,32 @@ jobs:
             # Обновление кода
             git pull origin main
             
+            # Проверка наличия .env
+            if [ ! -f .env ]; then
+              echo "❌ ERROR: .env file not found!"
+              exit 1
+            fi
+            
             # Запуск
             docker-compose up -d --build
             
             # Ожидание запуска
-            sleep 10
+            sleep 15
             
             # Проверка
             docker-compose ps
-            docker-compose logs --tail=20
+            docker-compose logs --tail=30 bot
             
-      - name: Send Telegram notification
-        if: always()
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message: |
-            ✅ Деплой завершён!
+    #   - name: Send Telegram notification
+    #     if: always()
+    #     uses: appleboy/telegram-action@master
+    #     with:
+    #       to: ${{ secrets.TELEGRAM_CHAT_ID }}
+    #       token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+    #       message: |
+    #         ${{ job.status == 'success' && '✅' || '❌' }} Деплой ${{ job.status == 'success' && 'успешен' || 'провален' }}!
             
-            Репозиторий: ${{ github.repository }}
-            Коммит: ${{ github.sha }}
-            Автор: ${{ github.actor }}
+    #         Репозиторий: ${{ github.repository }}
+    #         Коммит: ${{ github.sha }}
+    #         Автор: ${{ github.actor }}
+    #         Ветка: ${{ github.ref_name }}

@@ -61,7 +61,7 @@ async def admin_menu_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
             ['👥 Пользователи', '📊 Статистика'],
             ['⏳ На модерации', '📚 Рассылка'],  
-            ['🔄 Синхронизация']
+            ['🛠 Поменять инфо']
         ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
@@ -186,7 +186,11 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /menu"""
-    await show_main_menu(update, context)
+    user_id = update.effective_user.id
+    if is_admin(user_id):
+        await admin_menu_main(update, context)
+    else:
+        await show_main_menu(update, context)
 
 async def handle_company_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка раздела 'О компании'"""
@@ -770,7 +774,7 @@ async def admin_pending_users(update: Update, context: ContextTypes.DEFAULT_TYPE
     pending = db.get_pending_users()
     
     pending = [user for user in pending if not is_admin(user.user_id)]
-    
+
     if not pending:
         await update.message.reply_text("📭 Нет пользователей на модерации")
         return

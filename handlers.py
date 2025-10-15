@@ -769,6 +769,8 @@ async def admin_pending_users(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     pending = db.get_pending_users()
     
+    pending = [user for user in pending if not is_admin(user.user_id)]
+    
     if not pending:
         await update.message.reply_text("📭 Нет пользователей на модерации")
         return

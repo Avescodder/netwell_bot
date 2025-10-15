@@ -10,18 +10,14 @@ from pathlib import Path
 def setup_logging():
     """Настройка логирования бота"""
     
-    # Создаем директорию для логов если её нет
     logs_dir = Path("logs")
     logs_dir.mkdir(exist_ok=True)
     
-    # Основной логгер
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     
-    # Очищаем существующие обработчики
     logger.handlers.clear()
     
-    # === ФОРМАТ ЛОГОВ ===
     detailed_formatter = logging.Formatter(
         '%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
@@ -32,10 +28,9 @@ def setup_logging():
         datefmt='%H:%M:%S'
     )
     
-    # === ФАЙЛ: ВСЕ ЛОГИ (ротация по 5MB, хранится 3 файла) ===
     file_handler = RotatingFileHandler(
         logs_dir / 'bot.log',
-        maxBytes=5*1024*1024,  # 5 MB
+        maxBytes=5*1024*1024,  
         backupCount=3,
         encoding='utf-8'
     )
@@ -43,7 +38,6 @@ def setup_logging():
     file_handler.setFormatter(detailed_formatter)
     logger.addHandler(file_handler)
     
-    # === ФАЙЛ: ТОЛЬКО ОШИБКИ ===
     error_handler = RotatingFileHandler(
         logs_dir / 'errors.log',
         maxBytes=5*1024*1024,
@@ -56,21 +50,18 @@ def setup_logging():
     
     # === КОНСОЛЬ: ТОЛЬКО ВАЖНОЕ ===
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.WARNING)  # Только WARNING и выше
+    console_handler.setLevel(logging.WARNING)  
     console_handler.setFormatter(simple_formatter)
     logger.addHandler(console_handler)
     
     # === ОТКЛЮЧАЕМ ЛИШНИЕ ЛОГИ БИБЛИОТЕК ===
     
-    # Telegram библиотека - только ошибки
     logging.getLogger('telegram').setLevel(logging.ERROR)
     logging.getLogger('telegram.ext').setLevel(logging.ERROR)
     
-    # HTTP запросы - только ошибки
     logging.getLogger('httpx').setLevel(logging.ERROR)
     logging.getLogger('httpcore').setLevel(logging.ERROR)
     
-    # SQLAlchemy - только предупреждения
     logging.getLogger('sqlalchemy').setLevel(logging.WARNING)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
     

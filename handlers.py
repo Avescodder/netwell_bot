@@ -59,9 +59,10 @@ async def handle_start_button(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def admin_menu_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Основное меню для админа"""
     keyboard = [
-        ['🏢 Посмотреть пользователей', '🔍 Посмотреть статистику'],
-        ['📚 Сделать рассылку', '🛠 Поменять инфо'],
-    ]
+            ['👥 Пользователи', '📊 Статистика'],
+            ['⏳ На модерации', '📚 Рассылка'],  
+            ['🔄 Синхронизация']
+        ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
     await update.message.reply_text(
@@ -78,18 +79,55 @@ async def waiting_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def waiting_company(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ожидание ввода компании"""
     context.user_data['company'] = update.message.text
-    await update.message.reply_text("Введите ваш мобильный телефон:")
+    
+    from telegram import KeyboardButton
+    
+    keyboard = [[KeyboardButton("📱 Поделиться контактом", request_contact=True)]]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+    
+    await update.message.reply_text(
+        "Теперь поделитесь вашим номером телефона, нажав кнопку ниже:",
+        reply_markup=reply_markup
+    )
     return WAITING_PHONE
 
 async def waiting_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ожидание ввода телефона"""
-    context.user_data['phone'] = update.message.text
-    await update.message.reply_text("Введите ваш email:")
+    if update.message.contact:
+        phone = update.message.contact.phone_number
+        if not context.user_data.get('full_name'):
+            contact_name = f"{update.message.contact.first_name or ''} {update.message.contact.last_name or ''}".strip()
+            if contact_name:
+                context.user_data['full_name'] = contact_name
+    else:
+        await update.message.reply_text(
+            "❌ Пожалуйста, используйте кнопку 'Поделиться контактом' ниже.\n\n"
+            "Это необходимо для подтверждения вашего номера телефона."
+        )
+        return WAITING_PHONE 
+    
+    context.user_data['phone'] = phone
+    await update.message.reply_text(
+        "Введите ваш email:",
+        reply_markup=ReplyKeyboardRemove() 
+    )
     return WAITING_EMAIL
 
 async def waiting_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ожидание ввода email и завершение регистрации"""
     user_id = update.effective_user.id
+    email = update.message.text.strip()
+    
+    import re
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    
+    if not re.match(email_pattern, email):
+        await update.message.reply_text(
+            "❌ Неверный формат email.\n\n"
+            "Пожалуйста, введите корректный email адрес.\n"
+            "Пример: example@company.com"
+        )
+        return WAITING_EMAIL
     
     db.update_user_profile(
         user_id,
@@ -101,9 +139,33 @@ async def waiting_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     db.log_user_action(user_id, 'profile_completed')
     
-    await update.message.reply_text(MESSAGES['form_complete'])
-    await show_main_menu(update, context)
-    
+    await update.message.reply_text(
+        "✅ Спасибо! Ваша анкета отправлена на модерацию.\n\n"
+        "⏳ Ожидайте одобрения администратора. "
+        "Вы получите уведомление, когда доступ будет разрешен.",
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    for admin_id in ADMIN_IDS:
+        try:
+            user_info = (
+                f"🆕 Новая регистрация!\n\n"
+                f"👤 Имя: {context.user_data['full_name']}\n"
+                f"🏢 Компания: {context.user_data['company']}\n"
+                f"📱 Телефон: {context.user_data['phone']}\n"
+                f"📧 Email: {update.message.text}\n"
+                f"🆔 User ID: {user_id}\n\n"
+                f"Для одобрения используйте:\n"
+                f"`/approve {user_id}`"
+            )
+            await context.bot.send_message(
+                chat_id=admin_id,
+                text=user_info,
+                parse_mode=ParseMode.MARKDOWN
+            )
+        except Exception as e:
+            logger.error(f"Не удалось уведомить админа {admin_id}: {e}")
+
     return ConversationHandler.END
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -577,6 +639,15 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Обработчик текстовых сообщений"""
     text = update.message.text
     user_id = update.effective_user.id
+
+    if not is_admin(user_id):
+        user = db.get_user(user_id)
+        if user and not user.is_approved:
+            await update.message.reply_text(
+                "⏳ Ваша анкета находится на модерации.\n\n"
+                "Пожалуйста, ожидайте одобрения администратора."
+            )
+            return ConversationHandler.END
     
     if 'editing_field' in context.user_data:
         field = context.user_data['editing_field']
@@ -614,6 +685,7 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         admin_handlers = {
             '🏢 Посмотреть пользователей': admin_users,
             '🔍 Посмотреть статистику': admin_stats,
+            '⏳ На модерации': admin_pending_users, 
             '📚 Сделать рассылку': admin_send_start,
             '🛠 Поменять инфо': admin_update_vendor_start,
         }
@@ -688,6 +760,62 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "❌ Ошибка при получении статистики. Проверьте логи."
         )
+
+async def admin_pending_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Список пользователей на модерации"""
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("У вас нет прав доступа.")
+        return
+    
+    pending = db.get_pending_users()
+    
+    if not pending:
+        await update.message.reply_text("📭 Нет пользователей на модерации")
+        return
+    
+    text = f"⏳ Пользователи на модерации ({len(pending)}):\n\n"
+    for user in pending:
+        text += f"🆔 ID: `{user.user_id}`\n"
+        text += f"👤 {user.full_name or 'Без имени'}\n"
+        text += f"🏢 {user.company or 'Без компании'}\n"
+        text += f"📧 {user.email or 'Без email'}\n"
+        text += f"Одобрить: /approve {user.user_id}\n\n"
+    
+    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+
+async def admin_approve_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Одобрение пользователя"""
+    if not is_admin(update.effective_user.id):
+        await update.message.reply_text("У вас нет прав доступа.")
+        return
+    
+    try:
+        user_id_to_approve = int(context.args[0])
+    except (IndexError, ValueError):
+        await update.message.reply_text(
+            "❌ Используйте: /approve USER_ID\n"
+            "Пример: /approve 123456789"
+        )
+        return
+    
+    user = db.approve_user(user_id_to_approve)
+    
+    if user:
+        await update.message.reply_text(f"✅ Пользователь {user.full_name} одобрен!")
+        
+        try:
+            await context.bot.send_message(
+                chat_id=user_id_to_approve,
+                text="🎉 Поздравляем! Ваша анкета одобрена.\n\n"
+                     "Теперь вам доступен полный функционал бота. "
+                     "Используйте /menu для начала работы."
+            )
+        except Exception as e:
+            logger.error(f"Не удалось уведомить пользователя: {e}")
+        
+        db.log_user_action(update.effective_user.id, 'admin_approved_user', str(user_id_to_approve))
+    else:
+        await update.message.reply_text("❌ Пользователь не найден")
 
 async def admin_send_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начало рассылки - выбор адресатов"""

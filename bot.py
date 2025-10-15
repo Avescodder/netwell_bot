@@ -22,7 +22,7 @@ from handlers import (
     ADMIN_SELECT_USERS, ADMIN_MESSAGE_CONTENT,
     
     admin_users, admin_stats, admin_send_start, admin_send_message,
-    admin_select_recipients, admin_process_user_ids
+    admin_select_recipients, admin_process_user_ids, admin_pending_users, admin_approve_user
 )
 
 logger = setup_logging()
@@ -49,10 +49,13 @@ def main():
             MessageHandler(filters.Regex(r'^🚀 СТАРТ$'), handle_start_button)
         ],
         states={
-            WAITING_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, waiting_name)],
-            WAITING_COMPANY: [MessageHandler(filters.TEXT & ~filters.COMMAND, waiting_company)],
-            WAITING_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, waiting_phone)],
-            WAITING_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, waiting_email)],
+        WAITING_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, waiting_name)],
+        WAITING_COMPANY: [MessageHandler(filters.TEXT & ~filters.COMMAND, waiting_company)],
+        WAITING_PHONE: [
+            MessageHandler(filters.CONTACT, waiting_phone),  
+            MessageHandler(filters.TEXT & ~filters.COMMAND, waiting_phone)  
+        ],
+        WAITING_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, waiting_email)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         name="registration"
@@ -98,6 +101,8 @@ def main():
     application.add_handler(CommandHandler('users', admin_users))
     application.add_handler(CommandHandler('stats', admin_stats))
     application.add_handler(CommandHandler('cancel', cancel))
+    application.add_handler(CommandHandler('approve', admin_approve_user))
+    application.add_handler(CommandHandler('pending', admin_pending_users))
     
     application.add_handler(CallbackQueryHandler(button_callback))
     

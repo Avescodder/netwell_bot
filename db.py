@@ -25,6 +25,7 @@ class User(Base):
     email = Column(String(100), nullable=True)
     registration_date = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+    is_approved = Column(Boolean, default=False)
     
     def to_dict(self):
         """Преобразование объекта в словарь"""
@@ -347,6 +348,19 @@ class DatabaseManager:
         """Очистка таблицы направлений (для полной перезагрузки)"""
         self.session.query(VendorDirection).delete()
         self.session.commit()
+
+    def get_pending_users(self):
+        """Получение пользователей, ожидающих одобрения"""
+        return self.session.query(User).filter_by(is_approved=False, is_active=True).all()
+
+    def approve_user(self, user_id: int):
+        """Одобрение пользователя"""
+        user = self.session.query(User).filter_by(user_id=user_id).first()
+        if user:
+            user.is_approved = True
+            self.session.commit()
+            return user
+        return None
     
     def close(self):
         """Закрытие соединения с базой данных"""

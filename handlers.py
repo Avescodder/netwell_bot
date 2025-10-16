@@ -59,8 +59,8 @@ async def handle_start_button(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def admin_menu_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Основное меню для админа"""
     keyboard = [
-            ['👥 Пользователи', '📊 Статистика'],
-            ['⏳ На модерации', '📚 Рассылка'],  
+            ['🏢 Посмотреть пользователей', '🔍 Посмотреть статистику'],
+            ['⏳ На модерации', '📚 Сделать рассылку'],  
             ['🛠 Поменять инфо']
         ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -1042,6 +1042,7 @@ async def admin_menu_main_from_query(query, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         ['🏢 Посмотреть пользователей', '🔍 Посмотреть статистику'],
         ['📚 Сделать рассылку', '🛠 Поменять инфо'],
+        ['⏳ На модерации']
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
